@@ -1,0 +1,90 @@
+﻿@using Bank.Client.Authentications
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="@_theme" IsDarkMode="true" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar>
+        <MudStack Row="true" Justify="Justify.SpaceBetween" Style="width:100%">
+            <MudText Style="user-select: none" Typo="Typo.h5" Color="Color.Primary">Violet Bank </MudText>
+            <AuthorizeView>
+                <MudStack Row="true" AlignItems="AlignItems.Baseline">
+                    <MudText Style="font-weight:bold" Color="Color.Secondary" >@context.User?.Identity?.Name.ToUpper()</MudText>
+                    <MudButton EndIcon="@Icons.Material.Filled.Logout"  Variant="Variant.Filled" Color="Color.Primary" OnClick="LogoutAsync">Logout</MudButton>
+                </MudStack>
+            </AuthorizeView>
+        </MudStack>
+    </MudAppBar>
+    <MudMainContent Style="height: 100vh">
+        <MudContainer MaxWidth="MaxWidth.False" Gutters="true" Style="height: 100%" Class="pt-6">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    [Inject] public required NavigationManager NavigationManager { get; set; }
+    [Inject] public required ISnackbar Snackbar { get; set; }
+    [Inject] public required AuthenticationStateProvider AuthStateProvider { get; set; }
+    [Inject] public required AuthenticationService AuthService { get; set; }
+
+
+    private MudTheme _theme = new()
+        {
+            PaletteDark = new()
+            {
+                Primary = "#a477de",
+                Background = "#1b1b1b",
+                AppbarBackground = "#1b1b1b",
+                Surface = "#262427"
+            },
+        };
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState?.User;
+
+        if (user?.Identity is null ||
+            !user.Identity.IsAuthenticated ||
+            IsTokenExpired(user?.Claims.FirstOrDefault(c => c.Type.Equals("exp")).Value))
+        {
+            await AuthService.LogoutAsync();
+            NavigationManager.NavigateTo("/Auth");
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/Main");
+        }
+
+    }
+
+    async Task LogoutAsync()
+    {
+        var result = await AuthService.LogoutAsync();
+
+        (string message, Severity curSeverity) = result.IsSuccess
+            ? ("You are logged out of account ", Severity.Success)
+            : ("Failed to log out from account. Try again", Severity.Error);
+
+        Snackbar.Add(message, curSeverity);
+    }
+
+    bool IsTokenExpired(string exp)
+    {
+        if (exp != null)
+        {
+            var expiryDateTime = DateTimeOffset.FromUnixTimeSeconds(long.Parse(exp)).UtcDateTime;
+            return DateTime.UtcNow > expiryDateTime;
+        }
+
+        return true;
+    }
+}

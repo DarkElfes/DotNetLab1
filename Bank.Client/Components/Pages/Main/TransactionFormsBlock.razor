@@ -1,0 +1,20 @@
+﻿@using Bank.Client.Components.Pages.Main.TransactionForms
+@using Bank.Client.Services
+
+<MudPaper Width="500px" Elevation="5">
+    <MudTabs Centered="true" PanelClass="pa-5">
+        <MudTabPanel Text="Deposit">
+            <TransactionFormDeposit />
+        </MudTabPanel>
+        <MudTabPanel Text="Withdraw">
+            <TransactionFromWithdraw />
+        </MudTabPanel>
+        <MudTabPanel Text="Transfer">
+            <TransactionFormTransfer />
+        </MudTabPanel>
+    </MudTabs>
+</MudPaper>
+
+@code {
+    
+}

@@ -1,0 +1,82 @@
+﻿@using Bank.Client.Authentications
+@using Bank.Shared.Accounts
+@using System.ComponentModel.DataAnnotations
+@using static Bank.Client.Components.Pages.Auth.Auth
+
+
+<EditForm Model="@model" OnValidSubmit="Register">
+
+    <MudText Align="Align.Center" Typo="Typo.h5" Color="Color.Primary">Rregister</MudText>
+    <DataAnnotationsValidator />
+
+    <MudStack Spacing="4">
+        <MudTextField T="string" Label="Username" @bind-Value="model.Username" For="@(() => model.Username)"
+                      OnlyValidateIfDirty="true" InputType="InputType.Text" AutoFocus="true"/>
+
+        <MudTextField T="string" Label="Email" @bind-Value="model.Email" For="@(() => model.Email)"
+                      OnlyValidateIfDirty="true" InputType="InputType.Email" />
+
+        <MudTextField T="string" Label="Password" Required="true" @bind-Value="model.Password" For="@(() => model.Password)"
+                      OnlyValidateIfDirty="true" InputType="InputType.Password" />
+
+        <MudButton EndIcon="@Icons.Material.Filled.AppRegistration"
+                   Style="align-self-center"
+                   Color="Color.Primary"
+                   Disabled="@AuthState.IsLoading"
+                   Variant="Variant.Filled"
+                   ButtonType="ButtonType.Submit">
+            Register
+        </MudButton>
+    </MudStack>
+</EditForm>
+
+
+@code {
+    [Inject] public required AuthenticationService AuthService { get; set; }
+    [Inject] public required ISnackbar Snackbar { get; set; }
+    [Inject] public required NavigationManager NavManager { get; set; }
+
+    [Parameter] public required AuthState AuthState { get; set; }
+
+    RegisterModel model = new();
+
+    async Task Register()
+    {
+        AuthState.IsLoading = true;
+        try
+        {
+            var result = await AuthService.RegisterAsync(new(model.Username, model.Email, model.Password));
+            if (result.IsSuccess)
+            {
+                Snackbar.Add("Login to account is successfully", Severity.Success);
+                NavManager.NavigateTo("/Main");
+            }
+            else
+                Snackbar.Add(result.Errors.Last()?.Message ?? "Unhandled error", Severity.Error);
+
+        }
+        finally
+        {
+            AuthState.IsLoading = false;
+        }
+    }
+
+
+    class RegisterModel()
+    {
+        [Required]
+        [StringLength(20, ErrorMessage = "Username lenght must be less than 20")]
+        [RegularExpression(@"^[a-zA-Z][a-zA-Z0-9_]{0,19}$", ErrorMessage = "Characters are not allowed.")]
+        public string Username { get; set; } = string.Empty;
+
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(20, ErrorMessage = "Password must be at least 8 characters long.", MinimumLength = 8)]
+        [RegularExpression(@"^[\w]{0,19}$", ErrorMessage = "Password must include only letters and digits")]
+        public string Password { get; set; } = string.Empty;
+    }
+
+}

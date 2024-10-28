@@ -1,0 +1,70 @@
+﻿@using Bank.Shared.Cards
+@using Bank.Shared.Transactions.Enums
+@using Bank.Shared.Transactions.TransactionsDto;
+
+@if (Card is not null)
+{
+    <MudDataGrid Items="@Card.Transactions" FixedHeader RowClass="animated" Class="pa-4" Style="width: 50%; overflow-y: auto">
+        <Columns>
+            <TemplateColumn>
+                <HeaderTemplate>
+                    <MudText>To</MudText>
+                </HeaderTemplate>
+                <CellTemplate>
+                    @GetTo(context.Item)
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Created" Title="Created" />
+            <TemplateColumn>
+                <HeaderTemplate>
+                    <MudText>Amount</MudText>
+                </HeaderTemplate>
+                <CellTemplate>
+                    <MudText class="d-flex align-center" Color="@GetTransactionColor(context.Item)">
+                        @GetAmount(context.Item).ToString("N2") <MudIcon Icon="@Icons.Material.Filled.AttachMoney" />
+                    </MudText>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
+}
+else
+{
+    <MudProgressCircular Color="Color.Primary" />
+}
+
+
+
+
+@code {
+    [Parameter] public required CardDto Card { get; set; }
+
+    private Color GetTransactionColor(TransactionDto t)
+    {
+        if (t.Status.Equals(TransactionStatus.Failed))
+            return Color.Error;
+
+        if (t is TransferTransactionDto tt && tt.SenderCardId.Equals(Card.Id) || t.Type.Equals(TransactionType.Withdraw))
+            return Color.Default;
+
+        return Color.Success;
+    }
+
+    private decimal GetAmount(TransactionDto t)
+    {
+        if (t is not TransferTransactionDto tt)
+            return t.Amount;
+
+        return tt.SenderCardId.Equals(Card.Id) ? -tt.Amount : tt.Amount;
+    }
+
+    private string GetTo(TransactionDto t)
+        => t switch
+        {
+            TellerMachineTransactionDto tmt => tmt.MachineName,
+            TransferTransactionDto tt => tt.SenderCardId.Equals(Card.Id) ? $"To: {tt.ReceiverUsername.ToUpper()}" : $"From: {tt.SenderUsername.ToUpper()}",
+            ServicesPaymentTransactionDto spt => spt.ServiceName,
+            _ => "Unknown"
+        };
+
+}

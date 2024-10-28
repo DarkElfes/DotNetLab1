@@ -1,0 +1,76 @@
+﻿@page "/"
+@page "/Auth"
+
+@using Bank.Client.Components.Pages.Auth.Forms
+
+@implements IDisposable
+
+<MudStack Justify="Justify.FlexStart"
+          AlignItems="AlignItems.Center"
+          Style="Height: 100%">
+    <MudTabs Rounded="true" Elevation="4">
+        <MudTabPanel Text="Login"
+                     Icon="@Icons.Material.Filled.Login"
+                     OnClick="@(() => isLoginNow = true)" />
+        <MudTabPanel Text="Register"
+                     Icon="@Icons.Material.Filled.AppRegistration"
+                     OnClick="@(() => isLoginNow = false)" />
+    </MudTabs>
+
+
+    <MudPaper Class="pa-6"
+              Style="position: absolute; top:40%; width: 400px; overflow: hidden"
+              Elevation="4">
+
+        @if (authState.IsLoading)
+        {
+            <MudProgressLinear
+                Style="position: absolute; top: 99%; left: 0%; width:100%"
+                Color="Color.Primary"
+                Indeterminate="true" />
+        }
+        @if (isLoginNow)
+        {
+            <LoginForm AuthState="@authState" />
+        }
+        else
+        {
+            <RegisterForm AuthState="@authState" />
+        }
+    </MudPaper>
+</MudStack>
+
+@code {
+    [Inject] public required NavigationManager NavManager { get; set; }
+
+    bool isLoginNow = true;
+    AuthState authState = new();
+
+    protected override void OnInitialized()
+        => authState.AuthStateChanged += StateHasChanged;
+
+    public void Dispose()
+        => authState.AuthStateChanged -= StateHasChanged;
+
+    public class AuthState
+    {
+        private bool _isLoading { get; set; }
+        public event Action? AuthStateChanged;
+
+        public bool IsLoading
+        {
+            get => _isLoading;
+            set
+            {
+                _isLoading = value;
+                AuthStateChanged?.Invoke();
+            }
+        }
+    }
+
+}
+
+
+
+
+

@@ -1,0 +1,32 @@
+﻿@using Bank.Client.Services
+@using System.ComponentModel.DataAnnotations
+@using Bank.Shared.Transactions.Enums
+@using Bank.Shared.Transactions.Requests
+
+<EditForm Model="@requestModel" OnValidSubmit="SendTransaction">
+    <DataAnnotationsValidator />
+
+    <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
+        <MudNumericField T="decimal" Label="Amount" Min="0" Max="100000" MaxLength="9" Pattern="[0-9,.]"
+                         @bind-Value="requestModel.Amount" For="@(() => requestModel.Amount)"
+                         Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney"
+                         OnlyValidateIfDirty="true" HideSpinButtons="true" Immediate="true" />
+
+        <MudButton ButtonType="ButtonType.Submit"
+                   Color="Color.Primary"
+                   Variant="Variant.Outlined"
+                   Class="align-self-center">
+            Withdraw
+        </MudButton>
+    </MudStack>
+</EditForm>
+
+@code {
+    [Inject] public required TransactionService TransactionService { get; set; }
+
+    TransactionRequest requestModel = new() { Type = TransactionType.Withdraw };
+
+    async Task SendTransaction()
+        => await TransactionService.SendTransactionAsync(requestModel);
+
+}

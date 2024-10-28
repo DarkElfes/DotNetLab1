@@ -1,0 +1,44 @@
+﻿@using Bank.Client.Services
+@using Bank.Shared.Accounts
+@using Bank.Shared.Cards
+
+<MudPaper Class="pa-6" Style="width: 350px; height: 200px" Elevation="5">
+    <MudStack Justify="Justify.SpaceBetween" Style="height: 100%; font-family: monospace">
+        @if (Account is not null && Card is not null)
+        {
+            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                <MudText Typo="Typo.h5"
+                         Color="Color.Secondary">
+                    @($"{Card.Balance.ToString("0.00")}$")
+                </MudText>
+
+                <MudText Typo="Typo.h6" Color="Color.Primary" Align="Align.Right" 
+                         Style="font-style: italic; font-family: 'Gill Sans', sans-serif">
+                    Violet Bank
+                </MudText>
+
+            </MudStack>
+            <MudStack Row="true" Justify="Justify.SpaceEvenly">
+
+                @foreach (string chunk in Card.Number
+               .Chunk(4)
+               .Select(c => new string(c))
+               .ToList())
+                {
+                    <MudText Typo="Typo.h5"
+                             Style=" font-family: 'Montserrat', 'Helvetica', sans-serif"
+                             GutterBottom="true">
+                        @chunk
+                    </MudText>
+                }
+
+            </MudStack>
+        }
+    </MudStack>
+</MudPaper>
+
+
+@code {
+    [Parameter] public required AccountDto? Account { get; set; }
+    [Parameter] public required CardDto? Card { get; set; }
+}

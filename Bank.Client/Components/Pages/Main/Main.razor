@@ -1,0 +1,69 @@
+﻿@using Bank.Client.Authentications
+@using Bank.Client.Services
+@using Bank.Shared.Accounts
+@using Bank.Shared.Cards
+@using Microsoft.AspNetCore.Authorization
+@page "/Main"
+@attribute [Authorize]
+@implements IAsyncDisposable
+
+
+<MudStack Style="height: 100%; width: 100%; gap: 200px" Row="true"
+          Class="pa-20">
+
+    <MudStack Justify="Justify.SpaceEvenly" AlignItems="AlignItems.Center" Style="width: 40%">
+        <CardBlock Account="@account" Card="@card" />
+        <TransactionFormsBlock />
+    </MudStack>
+
+    <TransactionList Card="@card" />
+
+</MudStack>
+
+@code {
+    [Inject] public required AuthenticationService AuthService { get; set; }
+    [Inject] public required TransactionService TransactionService { get; set; }
+    [Inject] public required ISnackbar Snackbar { get; set; }
+
+    AccountDto? account;
+    CardDto? card;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await AuthService.GetAccountAsync() is var result && result.IsFailed || result.Value is null)
+            OutputSnackbarError(result.Errors);
+
+        account = result.Value;
+
+        TransactionService.NotifyCardUpdate += CardUpdate;
+        TransactionService.NotifyErrorUpdate += ErrorUpdate;
+
+        result = await TransactionService.ConnectAsync();
+        if (result.IsFailed)
+            OutputSnackbarError(result.Errors);
+    }
+
+
+    public async ValueTask DisposeAsync()
+    {
+        await TransactionService.DisconnectAsync();
+        TransactionService.NotifyCardUpdate -= CardUpdate;
+        TransactionService.NotifyErrorUpdate -= ErrorUpdate;
+    }
+
+    private async void CardUpdate()
+    {
+        card = TransactionService.Card;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async void ErrorUpdate(string message)
+    {
+        Snackbar.Add(message, Severity.Error);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OutputSnackbarError(List<IError> errors)
+        => Snackbar.Add(string.Join("\n", errors), Severity.Error);
+}
+

@@ -1,0 +1,73 @@
+﻿@using Bank.Client.Authentications
+@using System.ComponentModel.DataAnnotations
+@using static Bank.Client.Components.Pages.Auth.Auth
+
+<EditForm Model="@model" OnValidSubmit="Login">
+
+    <MudText Align="Align.Center" Typo="Typo.h5" Color="Color.Primary">Login</MudText>
+    <DataAnnotationsValidator />
+
+    <MudStack Spacing="4">
+        <MudTextField T="string" Label="Email" @bind-Value="model.Email" For="@(()=> model.Email)"
+                      OnlyValidateIfDirty="true" InputType="InputType.Email" AutoFocus="true"/>
+
+        <MudTextField T="string" Label="Password" @bind-Value="model.Password" For="@(() => model.Password)"
+                      OnlyValidateIfDirty="true" InputType="InputType.Password" />
+
+        <MudButton EndIcon="@Icons.Material.Filled.Login"
+                   Class="align-self-center"
+                   Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   Disabled="@AuthState.IsLoading"
+                   ButtonType="ButtonType.Submit">
+            Login
+        </MudButton>
+    </MudStack>
+</EditForm>
+
+
+
+@code {
+    [Inject] public required AuthenticationService AuthService { get; set; }
+    [Inject] public required ISnackbar Snackbar { get; set; }
+    [Inject] public required NavigationManager NavManager { get; set; }
+
+    [Parameter] public required AuthState AuthState { get; set; }
+
+    LoginModel model = new();
+
+
+    async Task Login()
+    {
+        if (AuthState.IsLoading) return;
+
+        AuthState.IsLoading = true;
+        try
+        {
+            var result = await AuthService.LoginAsync(new(model.Email, model.Password));
+            if (result.IsSuccess)
+            {
+                Snackbar.Add("Login to account is successfully", Severity.Success);
+                NavManager.NavigateTo("/Main");
+            }
+            else
+                Snackbar.Add(result.Errors.Last()?.Message ?? "Unhandled error", Severity.Error);
+        }
+        finally
+        {
+            AuthState.IsLoading = false;
+        }
+    }
+
+    class LoginModel()
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(30, ErrorMessage = "Password must be at least 8 characters long.", MinimumLength = 8)]
+        public string Password { get; set; } = string.Empty;
+    }
+
+}
