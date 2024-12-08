@@ -1,9 +1,8 @@
 ﻿using AutoMapper;
 using Bank.Api.Cards;
 using Bank.Shared.Accounts;
-using FluentResults.Extensions.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Principal;
+using FluentResults.Extensions.AspNetCore;
 
 namespace Bank.Api.Accounts;
 
